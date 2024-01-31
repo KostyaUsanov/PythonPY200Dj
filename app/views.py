@@ -4,21 +4,42 @@ from django.http import HttpRequest, JsonResponse
 from django.shortcuts import redirect
 from django.contrib.auth import login, logout, authenticate
 from .forms import TemplateForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 
 def template_view(request):
     if request.method == "GET":
-        return render(request, 'app/template_form.html')
+        form = TemplateForm()
+        return render(request, 'app/template_form.html', context={"form": form})
 
     if request.method == "POST":
         received_data = request.POST  # Приняли данные в словарь
-
-        # как пример получение данных по ключу `my_text`
-        # my_text = received_data.get('my_text')
-
+        form = TemplateForm(received_data)
         # TODO Проведите здесь получение и обработку данных если это необходимо
+        if form.is_valid():
+            my_text = form.cleaned_data.get("my_text")  # как пример получение данных по ключу `my_text`
+            my_select = form.cleaned_data.get("my_select")
+            my_textarea = form.cleaned_data.get("my_textarea")
+            my_email = form.cleaned_data.get("my_email")
+            my_password = form.cleaned_data.get("my_password")
+            my_date = form.cleaned_data.get("my_date")
+            my_number = form.cleaned_data.get("my_number")
+            my_checkbox = form.cleaned_data.get("my_checkbox")
 
-        # TODO Верните HttpRequest или JsonResponse с данными
+            return JsonResponse({'my_text': my_text,
+                                 "my_select": my_select,
+                                 "my_textarea": my_textarea,
+                                 "my_email": my_email,
+                                 "my_password": my_password,
+                                 "my_date": my_date,
+                                 "my_number": my_number,
+                                 "my_checkbox": my_checkbox},
+                                json_dumps_params={"indent": 4, 'ensure_ascii': False})
+            # TODO Верните HttpRequest или JsonResponse с данными
+        return render(request, 'app/template_form.html', context={"form": form})
+
+
+
 
 
 def login_view(request):
@@ -26,12 +47,19 @@ def login_view(request):
         return render(request, 'app/login.html')
 
     if request.method == "POST":
-        data = request.POST
-        user = authenticate(username=data["username"], password=data["password"])
-        if user:
+        form = AuthenticationForm(request, request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
             return redirect("app:user_profile")
-        return render(request, "app/login.html", context={"error": "Неверные данные"})
+        return render(request, "app/login.html", context={"form": form})
+    # if request.method == "POST":
+    #     data = request.POST
+    #     user = authenticate(username=data["username"], password=data["password"])
+    #     if user:
+    #         login(request, user)
+    #         return redirect("app:user_profile")
+    #     return render(request, "app/login.html", context={"error": "Неверные данные"})
 
 
 def logout_view(request):
