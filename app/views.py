@@ -3,7 +3,7 @@ from .models import get_random_text
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import redirect
 from django.contrib.auth import login, logout, authenticate
-from .forms import TemplateForm
+from .forms import TemplateForm, CustomUserCreationForm
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 
@@ -50,7 +50,7 @@ def login_view(request):
         form = AuthenticationForm(request, request.POST)
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # Авторизируем пользователя
             return redirect("app:user_profile")
         return render(request, "app/login.html", context={"form": form})
     # if request.method == "POST":
@@ -73,7 +73,13 @@ def register_view(request):
         return render(request, 'app/register.html')
 
     if request.method == "POST":
-        return render(request, 'app/register.html')
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()  # Возвращает сохраненного пользователя из данных формы
+            login(request, user)
+            return redirect("app:user_profile")
+
+        return render(request, 'app/register.html', context={"form": form})
 
 
 def reset_view(request):
